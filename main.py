@@ -163,4 +163,72 @@ def input_output_image(image_path , output_path):
     im.save(output_path) 
 
 
-input_output_image('"C:\Users\MOHIT\Desktop\dataste\IMG20220828151234.jpg"' , 'C:\Users\MOHIT\Desktop\Model_depl\Model DIS\DIS\IS-Net\output_img.jpg');
+def output_colored_img(input_path , output_path):
+    byteImgIO = io.BytesIO()
+    byteImg = Image.open(input_path)
+    byteImg.save(byteImgIO, "JPEG")
+    byteImgIO.seek(0)
+    byteImg = byteImgIO.read()
+
+    image_imread = plt.imread(input_path)
+    image_tensor, orig_size = load_image(input_path, hypar) 
+    mask , masked = predict(net,image_tensor,orig_size, hypar, device) # this is a 2d image
+
+
+    inv_mask = cv2.subtract(255, mask) 
+    inv_mask_3d = cv2.cvtColor(inv_mask , cv2.COLOR_GRAY2RGB) #make it 3d
+    a,b,c = inv_mask_3d.shape
+
+    copied_mask_2d = mask
+    copied_mask_3d = copied_mask_2d
+    copied_invmask_2d = inv_mask
+    copied_invmask_3d = copied_invmask_2d
+    # make then rgb images
+    copied_mask_3d = cv2.cvtColor(copied_mask_2d , cv2.COLOR_GRAY2RGB)
+    # print('shape would be changed for copied mask 2d also ' , copied_mask_2d.shape)
+
+    copied_invmask_3d = cv2.cvtColor(copied_invmask_2d , cv2.COLOR_GRAY2RGB)
+    # print('shape would be changed for copied invmask 2d also ' , copied_mask_2d.shape)
+    a,b,c = copied_mask_3d.shape 
+
+    my_last_semi_final_img = np.ndarray(shape = (a,b,c) , dtype = np.uint8)
+    # car in same color with black bg
+    for i in range(0 , a):
+        for j in range(0 , b):
+            for k in range(0,c):
+                if(copied_mask_3d[i][j][k] >= 240):
+                    my_last_semi_final_img[i][j][k] = image_imread[i][j][k]
+
+    # print('done')
+
+    #expecting a car with black bg 
+    # plt.imshow(my_last_semi_final_img)
+    # plt.show();
+
+    #make copies 
+    copied_black_bg_img = my_last_semi_final_img
+    copied_2_black_bg_img =copied_black_bg_img
+    my_last_final_img = copied_black_bg_img
+    # car in same color with white bg
+
+    # plt.show()
+
+    for i in range(0 , a):
+        for j in range(0 , b):
+            for k in range(0,c):
+                if(copied_invmask_3d[i][j][k] >= 238): #car in black rest in white
+                    my_last_final_img[i][j][k] = 255
+
+    # print('done')
+    plt.imshow(my_last_final_img)
+
+    my_final_img_copy = my_last_final_img
+    my_final_2_img_copy = my_final_img_copy
+    
+    r,g,b = cv2.split(my_final_2_img_copy)
+
+    merged_for_opencv = cv2.merge([b,g,r])
+
+    cv2.imwrite(output_path , merged_for_opencv)
+
+output_colored_img(); 
