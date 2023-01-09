@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 
-# load image
-
+# input a white bg image after running the above mentioned code !! 
 def remove_bg(input_path , output_path):
     img = cv2.imread(input_path)
 
